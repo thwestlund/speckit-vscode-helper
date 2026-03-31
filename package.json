@@ -4,6 +4,11 @@
   "description": "Live visual representation of SpecKit feature workflow states",
   "version": "0.1.0",
   "publisher": "speckit",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thwestlund/speckit-vscode-helper"
+  },
+  "license": "MIT",
   "engines": {
     "vscode": "^1.85.0"
   },
