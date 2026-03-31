@@ -1,0 +1,191 @@
+{
+  "name": "vscode-speckit",
+  "displayName": "SpecKit",
+  "description": "Live visual representation of SpecKit feature workflow states",
+  "version": "0.1.0",
+  "publisher": "speckit",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "keywords": ["speckit", "features", "workflow", "ai"],
+  "activationEvents": [
+    "workspaceContains:.specify/init-options.json"
+  ],
+  "main": "dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "speckit",
+          "title": "SpecKit",
+          "icon": "resources/speckit-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "speckit": [
+        {
+          "id": "speckit.featureTree",
+          "name": "Features",
+          "when": "speckit.active"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "speckit.featureTree",
+        "contents": "No SpecKit features found.\n[Create a feature](command:speckit.specifyFeature)",
+        "when": "speckit.active && speckit.noFeatures"
+      }
+    ],
+    "commands": [
+      {
+        "command": "speckit.refreshTree",
+        "title": "Refresh Features",
+        "category": "SpecKit",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "speckit.specifyFeature",
+        "title": "Specify Feature",
+        "category": "SpecKit"
+      },
+      {
+        "command": "speckit.planFeature",
+        "title": "Plan Feature",
+        "category": "SpecKit"
+      },
+      {
+        "command": "speckit.generateTasks",
+        "title": "Generate Tasks",
+        "category": "SpecKit"
+      },
+      {
+        "command": "speckit.implementFeature",
+        "title": "Implement Feature",
+        "category": "SpecKit"
+      },
+      {
+        "command": "speckit.clarifyFeature",
+        "title": "Clarify Feature",
+        "category": "SpecKit"
+      },
+      {
+        "command": "speckit.analyzeFeature",
+        "title": "Analyze Feature",
+        "category": "SpecKit"
+      },
+      {
+        "command": "speckit.createChecklist",
+        "title": "Create Checklist",
+        "category": "SpecKit"
+      },
+      {
+        "command": "speckit.syncExtension",
+        "title": "Sync Extension",
+        "category": "SpecKit"
+      },
+      {
+        "command": "speckit.openArtifact",
+        "title": "Open Artifact",
+        "category": "SpecKit"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "speckit.refreshTree",
+          "when": "view == speckit.featureTree",
+          "group": "navigation"
+        },
+        {
+          "command": "speckit.specifyFeature",
+          "when": "view == speckit.featureTree"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "speckit.specifyFeature",
+          "when": "viewItem == feature.new",
+          "group": "speckit@1"
+        },
+        {
+          "command": "speckit.clarifyFeature",
+          "when": "viewItem == feature.specified",
+          "group": "speckit@1"
+        },
+        {
+          "command": "speckit.planFeature",
+          "when": "viewItem == feature.specified",
+          "group": "speckit@2"
+        },
+        {
+          "command": "speckit.generateTasks",
+          "when": "viewItem == feature.planned",
+          "group": "speckit@1"
+        },
+        {
+          "command": "speckit.implementFeature",
+          "when": "viewItem == feature.tasksDefined || viewItem == feature.implementing",
+          "group": "speckit@1"
+        },
+        {
+          "command": "speckit.analyzeFeature",
+          "when": "viewItem =~ /^feature\\./",
+          "group": "speckit@3"
+        },
+        {
+          "command": "speckit.createChecklist",
+          "when": "viewItem =~ /^feature\\./",
+          "group": "speckit@4"
+        },
+        {
+          "command": "speckit.openArtifact",
+          "when": "viewItem =~ /^artifact\\./",
+          "group": "inline"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "SpecKit",
+      "properties": {
+        "speckit.aiAgent": {
+          "type": "string",
+          "default": "copilot",
+          "enum": ["copilot", "claude"],
+          "enumDescriptions": [
+            "GitHub Copilot (requires GitHub Copilot Chat extension)",
+            "Claude (requires Claude for VS Code extension)"
+          ],
+          "description": "AI agent to use for SpecKit prompts."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build:prod",
+    "compile": "tsc --noEmit",
+    "build": "node esbuild.config.mjs",
+    "build:prod": "node esbuild.config.mjs --production",
+    "watch": "node esbuild.config.mjs --watch",
+    "lint": "eslint src --ext ts",
+    "pretest": "tsc -p tsconfig.test.json",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.8",
+    "@types/node": "^20.0.0",
+    "@types/sinon": "^17.0.3",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "@vscode/test-electron": "^2.4.0",
+    "c8": "^9.0.0",
+    "esbuild": "^0.23.0",
+    "eslint": "^8.57.0",
+    "mocha": "^10.7.0",
+    "sinon": "^18.0.0",
+    "typescript": "^5.5.0"
+  }
+}
