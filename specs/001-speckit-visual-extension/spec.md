@@ -100,7 +100,7 @@ As a developer working on the SpecKit extension itself, I want the extension to 
 **Acceptance Scenarios**:
 
 1. **Given** a SpecKit template file is modified, **When** the file watcher detects the change, **Then** the extension displays a notification offering to regenerate related configuration.
-2. **Given** new SpecKit prompt files are added to `.github/prompts/`, **When** the change is detected, **Then** the extension updates its command palette entries to include the new prompts.
+2. **Given** new SpecKit prompt files are added to `.github/prompts/`, **When** the change is detected, **Then** the extension notifies the user and offers a "Sync" action to reload the window so new prompts take effect; no runtime configuration mutation is performed.
 3. **Given** the user dismisses the regeneration notification, **When** they later want to trigger it manually, **Then** a "SpecKit: Sync Extension" command is available in the command palette.
 
 ---
@@ -129,7 +129,7 @@ As a developer working on the SpecKit extension itself, I want the extension to 
 - **FR-009**: The extension MUST use templates from the project's `.specify/templates/` directory when available, falling back to built-in defaults.
 - **FR-010**: The extension MUST NOT persist, cache, or store any project data. All information MUST be read from the file system on demand or via file watchers.
 - **FR-011**: The extension MUST only activate when a `.specify/` directory is detected in the workspace, using a targeted activation event.
-- **FR-012**: The extension MUST detect changes to SpecKit project files (templates, scripts, prompts) and offer to regenerate or update its own configuration.
+- **FR-012**: The extension MUST detect changes to SpecKit project files (templates, scripts, prompts) and display a notification offering to reload the window; the extension MUST NOT mutate any configuration at runtime.
 - **FR-013**: The tree view MUST display features in a logical order (numerical by feature number prefix).
 - **FR-014**: The extension MUST display child nodes under each feature showing the individual artifacts (spec, plan, tasks, etc.) with their existence status.
 - **FR-015**: The extension MUST show an informative empty-state message in the tree when no features exist.
@@ -150,11 +150,19 @@ As a developer working on the SpecKit extension itself, I want the extension to 
 - **SC-001**: Users can view the full list of SpecKit features and their workflow states within 2 seconds of opening a workspace.
 - **SC-002**: The tree view reflects file-system changes (new feature, new artifact, deleted file) within 3 seconds of the change occurring.
 - **SC-003**: Users can launch the correct SpecKit prompt for any feature in 2 clicks or fewer (right-click → action).
-- **SC-004**: 95% of users can identify a feature's current workflow state from the tree view without consulting documentation.
-- **SC-005**: The extension adds no more than 200ms to VS Code's activation time when a `.specify/` directory is present.
+- **SC-004**: *(Post-launch target — see below)*
+- **SC-005**: The extension adds no more than 500ms to VS Code's activation time when a `.specify/` directory is present. *(Aligned with Constitution Principle IV; tighter 200ms target is aspirational — see post-launch targets below.)*
 - **SC-006**: The extension consumes zero additional disk space for project data (read-only, no caching or storage).
 - **SC-007**: Switching between AI agents requires changing a single setting value — no restart, no additional configuration.
-- **SC-008**: Template prompts reduce the time to launch a correctly-structured SpecKit command by at least 50% compared to typing the command and arguments manually.
+- **SC-008**: *(Post-launch target — see below)*
+
+### Post-Launch Aspirational Targets
+
+*These outcomes require user research or A/B testing to validate and cannot be asserted from code or automated tests.*
+
+- **SC-004-A**: 95% of users can identify a feature's current workflow state from the tree view without consulting documentation.
+- **SC-008-A**: Template prompts reduce the time to launch a correctly-structured SpecKit command by at least 50% compared to typing the command and arguments manually.
+- **SC-005-A**: The extension adds no more than 200ms to VS Code's activation time for the fastest 90th percentile of machines.
 
 ## Assumptions
 

@@ -41,6 +41,9 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
+- [x] TT001 [P] Write unit tests for `WorkflowState` in test/unit/models/workflowState.test.ts — cover all 7 `deriveState()` paths (no artifacts→New, spec→Specified, plan→Planned, tasks present→TasksDefined, mixed [x]→Implementing, all [x]→Complete, edge cases) and `STATE_ORDER` membership; confirm GREEN
+- [x] TT002 [P] Write unit tests for `parseFeatureDirectory()` in test/unit/models/feature.test.ts — cover standard prefix, timestamp prefix, multi-word kebab, and non-standard (fallback) cases; confirm GREEN
+
 - [x] T011 [P] Create src/models/artifact.ts — export Artifact interface (fileName, filePath, exists, artifactType) and ArtifactType enum (Spec, Plan, Research, DataModel, Contracts, Quickstart, Tasks, Checklist) with their corresponding file names per data-model.md
 - [x] T012 [P] Create src/models/workflowState.ts — export WorkflowState enum (New, Specified, Planned, TasksDefined, Implementing, Complete, Unknown), STATE_ORDER array for ascending comparison, and deriveState(artifacts: Artifact[]): WorkflowState function implementing the state machine from data-model.md (checks tasks.md checkbox markers for Implementing/Complete distinction) per research.md R5
 - [x] T013 Create src/models/feature.ts — export Feature interface with fields: number (string), shortName (string), branchName (string), directoryPath (string), state (WorkflowState), artifacts (Artifact[]), and parseFeatureDirectory(dirName: string): {number, shortName} helper per data-model.md
@@ -56,6 +59,11 @@
 **Goal**: Sidebar tree view showing all SpecKit features with their workflow states and artifact children
 
 **Independent Test**: Open a workspace with `.specify/` and `specs/` → tree appears with features in correct states and order
+
+### Tests for User Story 1
+
+- [x] TT003 [US1] Unit tests for `FeatureTreeItem` icon and tooltip logic in test/unit/providers/featureTreeItem.test.ts — verify `iconPath` and `tooltip` based on `actionState.needsAction` (overlaps with feature 003 test coverage; tests are GREEN)
+- [x] TT004 [US1] Integration tests for `FeatureTreeProvider` sort order and `getChildren` in test/integration/featureTreeProvider.test.ts — verify feature listing and ordering (overlaps with feature 003; tests are GREEN)
 
 ### Implementation for User Story 1
 
@@ -75,6 +83,11 @@
 
 **Independent Test**: Create or delete a spec file while tree is visible → tree updates within 3 seconds without manual refresh
 
+### Tests for User Story 2
+
+- [x] TT005 [US2] Integration test for file-change indicator in test/integration/fileWatcher.indicator.test.ts — verifies state transition on artifact creation (overlaps with feature 003; tests are GREEN)
+- [x] TT006 [US2] Unit test for `debounce()` in test/unit/services/fileWatcher.test.ts — assert coalesced callback invocation using fake timers (sinon); confirm GREEN
+
 ### Implementation for User Story 2
 
 - [x] T021 [US2] Create src/services/fileWatcher.ts — export setupSpecsWatcher(specsDir: vscode.Uri, onChanged: () => void): vscode.Disposable that creates vscode.workspace.createFileSystemWatcher with RelativePattern for **/specs/**/* glob, registers onDidCreate/onDidChange/onDidDelete handlers calling a debounced onChanged callback per research.md R2
@@ -90,6 +103,11 @@
 **Goal**: Right-click a feature to launch the appropriate SpecKit prompt in the chat panel
 
 **Independent Test**: Right-click a feature in state "Specified" → select "Plan Feature" → chat opens with /speckit.plan prompt pre-populated
+
+### Tests for User Story 3
+
+- [x] TT007 [US3] Unit tests for `agentRegistry` in test/unit/agents/agentRegistry.test.ts — verify `getAgent()` returns correct adapter, `checkAvailability()` returns false when extension missing (stub `vscode.extensions.getExtension`); confirm GREEN
+- [x] TT008 [US3] Unit tests for `promptLauncher` in test/unit/services/promptLauncher.test.ts — verify `launchPrompt()` reads setting, builds query from template, calls `workbench.action.chat.open` (stub `vscode.commands.executeCommand`); confirm GREEN
 
 ### Implementation for User Story 3
 
@@ -110,6 +128,10 @@
 
 **Independent Test**: Launch "Specify Feature" → chat input contains structured template with placeholder sections for user stories, acceptance criteria
 
+### Tests for User Story 4
+
+- [x] TT009 [US4] Unit tests for `templateResolver` in test/unit/services/templateResolver.test.ts — verify 4-tier resolution order: project override, preset, extension, project default, built-in fallback; stub `vscode.workspace.fs.readFile`; confirm GREEN
+
 ### Implementation for User Story 4
 
 - [x] T030 [US4] Create src/services/templateResolver.ts — export resolveTemplate(step: string, workspaceRoot: vscode.Uri): Promise<string> implementing 4-tier resolution order: (1) .specify/templates/overrides/{step}-template.md, (2) .specify/presets/*/templates/{step}-template.md, (3) .specify/extensions/*/templates/{step}-template.md, (4) .specify/templates/{step}-template.md, with fallback to built-in default per research.md R4 and data-model.md TemplateSource enum
@@ -126,6 +148,10 @@
 
 **Independent Test**: Change speckit.aiAgent to "claude" → next prompt routes to Claude participant
 
+### Tests for User Story 5
+
+- [x] TT010 [US5] Integration test for unavailable-agent error path in test/unit/services/promptLauncher.test.ts — verify `showErrorMessage` is called with the correct extension ID when `checkAvailability()` returns false; confirm GREEN
+
 ### Implementation for User Story 5
 
 - [x] T033 [US5] Implement agent availability checking in src/agents/agentRegistry.ts — export checkAvailability(agentId: string): boolean that maps agent IDs to required VS Code extension identifiers (copilot → "github.copilot-chat", claude → "anthropic.claude-for-vscode") and checks via vscode.extensions.getExtension() per data-model.md AIAgent.available field
@@ -140,6 +166,10 @@
 **Goal**: Detect changes to SpecKit project files and offer to sync extension configuration
 
 **Independent Test**: Modify a .specify/templates/ file → notification appears offering regeneration
+
+### Tests for User Story 6
+
+- [x] TT011 [US6] Integration test for project watcher notification in test/integration/projectWatcher.test.ts — verify `showInformationMessage` fires within 3 s of a `.specify/templates/` file change (stub watcher event); confirm GREEN
 
 ### Implementation for User Story 6
 
@@ -161,6 +191,7 @@
 - [x] T041 [P] Create CHANGELOG.md with initial v0.1.0 entry listing all 6 user stories as features
 - [x] T042 Run quickstart.md verification checklist — validate all 6 user stories per quickstart.md verification steps (P1 tree, P2 live updates, P3 prompts, P4 templates, P5 agent config, P6 self-gen)
 - [x] T043 Run esbuild production bundle and verify VSIX package builds successfully with reasonable size (< 500 KB) per research.md R7
+- [x] T044 [P] Validate SC-001: in Extension Development Host with 20+ feature fixture, confirm the SpecKit sidebar is fully populated within 2 seconds of workspace activation (time from activation event to first `getChildren()` response)
 
 ---
 

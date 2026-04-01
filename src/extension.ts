@@ -75,10 +75,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       void launchPrompt('implement', item?.feature, workspaceRoot);
     }),
     vscode.commands.registerCommand(COMMAND_IDS.clarifyFeature, (item?: FeatureTreeItem) => {
-      void launchPrompt('clarify', item?.feature, workspaceRoot, true);
+      void launchPrompt('clarify', item?.feature, workspaceRoot);
     }),
     vscode.commands.registerCommand(COMMAND_IDS.analyzeFeature, (item?: FeatureTreeItem) => {
-      void launchPrompt('analyze', item?.feature, workspaceRoot, true);
+      void launchPrompt('analyze', item?.feature, workspaceRoot);
     }),
     vscode.commands.registerCommand(COMMAND_IDS.createChecklist, (item?: FeatureTreeItem) => {
       void launchPrompt('checklist', item?.feature, workspaceRoot);
