@@ -9,6 +9,7 @@ import { registerAgent } from './agents/agentRegistry.js';
 import { CopilotAgent } from './agents/copilotAgent.js';
 import { ClaudeAgent } from './agents/claudeAgent.js';
 import { listWorktrees, addWorktree } from './services/worktreeService.js';
+import { findGitRoot } from './services/worktreeAggregator.js';
 
 let outputChannel: vscode.OutputChannel | undefined;
 
@@ -32,9 +33,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   const workspaceRoot = vscode.Uri.joinPath(specifyRoot, '..');
   const specsDir = vscode.Uri.joinPath(workspaceRoot, 'specs');
+  const gitRoot = await findGitRoot(workspaceRoot.fsPath);
 
   // US1: Feature tree view
-  const treeProvider = new FeatureTreeProvider(specsDir);
+  const treeProvider = new FeatureTreeProvider(specsDir, gitRoot);
   context.subscriptions.push(treeProvider);
   context.subscriptions.push(
     vscode.window.createTreeView('speckit.featureTree', { treeDataProvider: treeProvider }),
@@ -89,7 +91,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   context.subscriptions.push(
     vscode.commands.registerCommand(COMMAND_IDS.openArtifact, (item?: ArtifactTreeItem) => {
       if (item?.artifact?.filePath) {
-        void vscode.window.showTextDocument(vscode.Uri.file(item.artifact.filePath));
+        vscode.window.showTextDocument(vscode.Uri.file(item.artifact.filePath)).then(
+          () => {},
+          (err: unknown) => {
+            void vscode.window.showErrorMessage(
+              `SpecKit: Could not open file — ${err instanceof Error ? err.message : String(err)}`,
+            );
+          },
+        );
       }
     }),
   );

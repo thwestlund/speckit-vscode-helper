@@ -5,6 +5,8 @@ import { Feature } from '../../../src/models/feature.js';
 import { WorkflowState } from '../../../src/models/workflowState.js';
 import { deriveActionState } from '../../../src/models/actionState.js';
 
+const CURRENT_WORKTREE = { path: '/repo/main', branch: 'main', isCurrentWorkspace: true };
+
 function makeFeature(dirName: string): Feature {
   const match = /^(\d+(?:-\d+)?)-(.+)$/.exec(dirName);
   const number = match ? match[1] : dirName;
@@ -17,6 +19,7 @@ function makeFeature(dirName: string): Feature {
     state: WorkflowState.Specified,
     artifacts: [],
     actionState: deriveActionState(WorkflowState.Specified),
+    worktreeSource: CURRENT_WORKTREE,
   };
 }
 

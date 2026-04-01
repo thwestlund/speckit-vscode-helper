@@ -18,6 +18,7 @@ function makeFeature(branchName: string) {
     state: 0 as never,
     artifacts: [],
     actionState: { needsAction: false, pendingActionLabel: undefined },
+    worktreeSource: { path: '/repo/main', branch: 'main', isCurrentWorkspace: true },
   };
 }
 

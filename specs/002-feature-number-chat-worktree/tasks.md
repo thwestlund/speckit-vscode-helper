@@ -75,7 +75,7 @@
 
 - [x] T012 Run `npm run compile` — resolve any TypeScript strict-mode errors across `src/constants.ts`, `src/providers/featureTreeItem.ts`, `src/extension.ts`, `src/services/worktreeService.ts`
 - [x] T013 Run `npm test` — confirm all suites pass: `featureTreeItem.label.test.ts`, `worktreeService.test.ts`, `openInChat.test.ts` all GREEN; no regressions in existing test suite
-- [ ] T014 Manual smoke test — execute quickstart.md steps 1–15 in Extension Development Host: verify numbers visible in sidebar, skeleton pre-populates chat without auto-send, worktree Quick Pick appears and opens new window, error path shows human-readable message
+- [x] T014 Manual smoke test — execute quickstart.md steps 1–15 in Extension Development Host: verify numbers visible in sidebar, skeleton pre-populates chat without auto-send, worktree Quick Pick appears and opens new window, error path shows human-readable message
 
 ---
 
