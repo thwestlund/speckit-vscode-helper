@@ -23,6 +23,30 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   registerAgent(new CopilotAgent());
   registerAgent(new ClaudeAgent());
 
+  // US2 (002): Open feature in new chat — register unconditionally so it works in any workspace
+  context.subscriptions.push(
+    vscode.commands.registerCommand(COMMAND_IDS.openFeatureInChat, () => {
+      void vscode.commands.executeCommand('workbench.action.chat.open', {
+        query: CHAT_SKELETON,
+        isPartialQuery: true,
+        newSession: true,
+      });
+    }),
+  );
+
+  // US3 (002): Start feature in a new or existing git worktree — register unconditionally;
+  // resolves workspaceRoot dynamically at execution time so it works before findSpecifyRoot.
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      COMMAND_IDS.startInWorktree,
+      (item?: FeatureTreeItem) => {
+        const root =
+          vscode.workspace.workspaceFolders?.[0]?.uri ?? vscode.Uri.file(process.cwd());
+        void startInWorktree(item, root);
+      },
+    ),
+  );
+
   // Locate .specify/ root (supports multi-root workspaces)
   const specifyRoot = await findSpecifyRoot();
   if (!specifyRoot) {
@@ -108,27 +132,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.commands.registerCommand(COMMAND_IDS.syncExtension, () => {
       void syncExtension(workspaceRoot);
     }),
-  );
-
-  // US2 (002): Open feature in new chat with skeleton template
-  context.subscriptions.push(
-    vscode.commands.registerCommand(COMMAND_IDS.openFeatureInChat, () => {
-      void vscode.commands.executeCommand('workbench.action.chat.open', {
-        query: CHAT_SKELETON,
-        isPartialQuery: true,
-        newSession: true,
-      });
-    }),
-  );
-
-  // US3 (002): Start feature in a new or existing git worktree
-  context.subscriptions.push(
-    vscode.commands.registerCommand(
-      COMMAND_IDS.startInWorktree,
-      (item?: FeatureTreeItem) => {
-        void startInWorktree(item, workspaceRoot);
-      },
-    ),
   );
 
   const elapsed = performance.now() - startTime;
