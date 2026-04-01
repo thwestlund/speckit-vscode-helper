@@ -18,9 +18,22 @@ export class FeatureTreeItem extends vscode.TreeItem {
   constructor(readonly feature: Feature) {
     super(feature.shortName, vscode.TreeItemCollapsibleState.Collapsed);
     this.description = STATE_LABELS[feature.state];
-    this.iconPath = STATE_ICONS.get(feature.state);
     this.contextValue = `feature.${feature.state}`;
-    this.tooltip = `${feature.branchName} (${STATE_LABELS[feature.state]})`;
+
+    if (feature.actionState.needsAction) {
+      this.iconPath = new vscode.ThemeIcon(
+        'warning',
+        new vscode.ThemeColor('list.warningForeground'),
+      );
+      const baseText = `${feature.branchName} (${STATE_LABELS[feature.state]})`;
+      const md = new vscode.MarkdownString(
+        `${baseText}\n\n${feature.actionState.pendingActionLabel}`,
+      );
+      this.tooltip = md;
+    } else {
+      this.iconPath = STATE_ICONS.get(feature.state);
+      this.tooltip = `${feature.branchName} (${STATE_LABELS[feature.state]})`;
+    }
   }
 }
 

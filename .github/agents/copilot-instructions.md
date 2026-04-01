@@ -1,8 +1,10 @@
 # vscode-speckit-extension Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-03-31
+Auto-generated from all feature plans. Last updated: 2026-04-01
 
 ## Active Technologies
+- TypeScript 5.x (strict mode, per Constitution Principle I) + `@types/vscode` (VS Code Extension API 1.85+) — no additional runtime dependencies; all visual indicator capabilities are native to the TreeItem and ThemeIcon APIs (003-feature-action-indicator)
+- N/A — read-only; no persistence (003-feature-action-indicator)
 
 - TypeScript 5.x (strict mode, per Constitution Principle I) + `@types/vscode` (VS Code Extension API 1.85+) — no additional runtime dependencies (001-speckit-visual-extension)
 
@@ -22,6 +24,7 @@ npm test && npm run lint
 TypeScript 5.x (strict mode, per Constitution Principle I): Follow standard conventions
 
 ## Recent Changes
+- 003-feature-action-indicator: Added TypeScript 5.x (strict mode, per Constitution Principle I) + `@types/vscode` (VS Code Extension API 1.85+) — no additional runtime dependencies; all visual indicator capabilities are native to the TreeItem and ThemeIcon APIs
 
 - 001-speckit-visual-extension: Added TypeScript 5.x (strict mode, per Constitution Principle I) + `@types/vscode` (VS Code Extension API 1.85+) — no additional runtime dependencies
 

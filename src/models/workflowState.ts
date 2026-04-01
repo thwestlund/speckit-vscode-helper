@@ -31,6 +31,9 @@ export function deriveState(artifacts: Artifact[], tasksContent?: string): Workf
   }
 
   if (byType.get(ArtifactType.Plan)?.exists) {
+    // Edge case (E4): an empty plan.md is treated as Planned state because state derivation
+    // is based on file presence, not content. A plan.md with no content still advances the
+    // feature from Specified → Planned. This is intentional — content validation is out of scope.
     return WorkflowState.Planned;
   }
 
