@@ -1,9 +1,9 @@
 {
-  "name": "vscode-speckit",
-  "displayName": "SpecKit",
+  "name": "vscode-speckit-helper",
+  "displayName": "Spec Kit Helper",
   "description": "Live visual representation of SpecKit feature workflow states",
-  "version": "0.1.0",
-  "publisher": "speckit",
+  "version": "0.2.0",
+  "publisher": "ForgeIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/thwestlund/speckit-vscode-helper"

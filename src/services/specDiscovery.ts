@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { Feature, parseFeatureDirectory } from '../models/feature.js';
 import { Artifact, ArtifactType } from '../models/artifact.js';
 import { deriveState } from '../models/workflowState.js';
+import { deriveActionState } from '../models/actionState.js';
 import { ARTIFACT_FILES } from '../constants.js';
 
 export async function discoverFeatures(specsDir: vscode.Uri): Promise<Feature[]> {
@@ -31,6 +32,7 @@ async function buildFeature(specsDir: vscode.Uri, dirName: string): Promise<Feat
   }
 
   const state = deriveState(artifacts, tasksContent);
+  const actionState = deriveActionState(state);
 
   return {
     number,
@@ -39,6 +41,7 @@ async function buildFeature(specsDir: vscode.Uri, dirName: string): Promise<Feat
     directoryPath: dirPath.fsPath,
     state,
     artifacts,
+    actionState,
   };
 }
 

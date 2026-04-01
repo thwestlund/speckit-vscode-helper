@@ -6,7 +6,8 @@
       "type": "extensionHost",
       "request": "launch",
       "args": [
-        "--extensionDevelopmentPath=${workspaceFolder}"
+        "--extensionDevelopmentPath=${workspaceFolder}",
+        "--disable-extension=speckit.vscode-speckit"
       ],
       "outFiles": [
         "${workspaceFolder}/dist/**/*.js"
@@ -19,7 +20,8 @@
       "request": "launch",
       "args": [
         "--extensionDevelopmentPath=${workspaceFolder}",
-        "--extensionTestsPath=${workspaceFolder}/out/test/suite/index"
+        "--extensionTestsPath=${workspaceFolder}/out/test/suite/index",
+        "--disable-extension=speckit.vscode-speckit"
       ],
       "outFiles": [
         "${workspaceFolder}/out/**/*.js"

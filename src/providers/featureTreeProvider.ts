@@ -54,7 +54,14 @@ export class FeatureTreeProvider implements vscode.TreeDataProvider<TreeElement>
 }
 
 function sortFeatures(features: Feature[]): Feature[] {
-  return [...features].sort((a, b) => naturalCompare(a.branchName, b.branchName));
+  return [...features].sort((a, b) => {
+    const aNeeds = a.actionState.needsAction ? 0 : 1;
+    const bNeeds = b.actionState.needsAction ? 0 : 1;
+    if (aNeeds !== bNeeds) {
+      return aNeeds - bNeeds;
+    }
+    return naturalCompare(a.branchName, b.branchName);
+  });
 }
 
 function naturalCompare(a: string, b: string): number {
