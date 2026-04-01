@@ -15,7 +15,10 @@
   "categories": ["Other"],
   "keywords": ["speckit", "features", "workflow", "ai"],
   "activationEvents": [
-    "workspaceContains:.specify/init-options.json"
+    "onStartupFinished",
+    "workspaceContains:.specify/init-options.json",
+    "onCommand:speckit.startInWorktree",
+    "onCommand:speckit.openFeatureInChat"
   ],
   "main": "dist/extension.js",
   "contributes": {

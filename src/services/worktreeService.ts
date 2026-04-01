@@ -78,5 +78,19 @@ export async function addWorktree(
   execFn: ExecFn = childProcess.exec,
 ): Promise<void> {
   const execGit = makeExecGit(execFn);
-  await execGit(`git worktree add "${targetPath}" "${branch}"`, gitRoot);
+
+  // Check if the branch already exists; use -b to create it if not.
+  let branchExists = false;
+  try {
+    await execGit(`git rev-parse --verify "${branch}"`, gitRoot);
+    branchExists = true;
+  } catch {
+    branchExists = false;
+  }
+
+  if (branchExists) {
+    await execGit(`git worktree add "${targetPath}" "${branch}"`, gitRoot);
+  } else {
+    await execGit(`git worktree add -b "${branch}" "${targetPath}"`, gitRoot);
+  }
 }

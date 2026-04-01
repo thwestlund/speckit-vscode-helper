@@ -1,6 +1,7 @@
 import { WorkflowState } from './workflowState.js';
 import { Artifact } from './artifact.js';
 import { ActionState } from './actionState.js';
+import { WorktreeInfo } from '../services/worktreeService.js';
 
 export interface Feature {
   readonly number: string;
@@ -10,6 +11,7 @@ export interface Feature {
   readonly state: WorkflowState;
   readonly artifacts: Artifact[];
   readonly actionState: ActionState;
+  readonly worktreeSource: WorktreeInfo;
 }
 
 export function parseFeatureDirectory(dirName: string): { number: string; shortName: string } {

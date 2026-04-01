@@ -4,8 +4,9 @@ import { Artifact, ArtifactType } from '../models/artifact.js';
 import { deriveState } from '../models/workflowState.js';
 import { deriveActionState } from '../models/actionState.js';
 import { ARTIFACT_FILES } from '../constants.js';
+import { WorktreeInfo } from './worktreeService.js';
 
-export async function discoverFeatures(specsDir: vscode.Uri): Promise<Feature[]> {
+export async function discoverFeatures(specsDir: vscode.Uri, worktree: WorktreeInfo): Promise<Feature[]> {
   let entries: [string, vscode.FileType][];
   try {
     entries = await vscode.workspace.fs.readDirectory(specsDir);
@@ -15,12 +16,12 @@ export async function discoverFeatures(specsDir: vscode.Uri): Promise<Feature[]>
 
   const featurePromises = entries
     .filter(([, type]) => type === vscode.FileType.Directory)
-    .map(([name]) => buildFeature(specsDir, name));
+    .map(([name]) => buildFeature(specsDir, name, worktree));
 
   return Promise.all(featurePromises);
 }
 
-async function buildFeature(specsDir: vscode.Uri, dirName: string): Promise<Feature> {
+async function buildFeature(specsDir: vscode.Uri, dirName: string, worktree: WorktreeInfo): Promise<Feature> {
   const { number, shortName } = parseFeatureDirectory(dirName);
   const dirPath = vscode.Uri.joinPath(specsDir, dirName);
   const artifacts = await buildArtifacts(dirPath);
@@ -42,6 +43,7 @@ async function buildFeature(specsDir: vscode.Uri, dirName: string): Promise<Feat
     state,
     artifacts,
     actionState,
+    worktreeSource: worktree,
   };
 }
 

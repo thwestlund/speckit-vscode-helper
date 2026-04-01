@@ -1,10 +1,15 @@
+import * as path from 'path';
 import * as vscode from 'vscode';
 import { Feature } from '../models/feature.js';
+import { FeatureGroup } from '../models/featureGroup.js';
 import { FeatureTreeItem, ArtifactTreeItem } from './featureTreeItem.js';
+import { WorktreeGroupItem } from './worktreeGroupItem.js';
 import { discoverFeatures } from '../services/specDiscovery.js';
+import { aggregateFeatures } from '../services/worktreeAggregator.js';
 import { CONTEXT_KEYS } from '../constants.js';
+import { WorktreeInfo } from '../services/worktreeService.js';
 
-type TreeElement = FeatureTreeItem | ArtifactTreeItem;
+type TreeElement = FeatureTreeItem | ArtifactTreeItem | WorktreeGroupItem;
 
 export class FeatureTreeProvider implements vscode.TreeDataProvider<TreeElement>, vscode.Disposable {
   private readonly _onDidChangeTreeData = new vscode.EventEmitter<
@@ -12,9 +17,12 @@ export class FeatureTreeProvider implements vscode.TreeDataProvider<TreeElement>
   >();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-  private _features: Feature[] = [];
+  private _groups: FeatureGroup[] = [];
 
-  constructor(private readonly _specsDir: vscode.Uri) {}
+  constructor(
+    private readonly _specsDir: vscode.Uri,
+    private readonly _gitRoot?: string,
+  ) {}
 
   getTreeItem(element: TreeElement): vscode.TreeItem {
     return element;
@@ -22,7 +30,16 @@ export class FeatureTreeProvider implements vscode.TreeDataProvider<TreeElement>
 
   async getChildren(element?: TreeElement): Promise<TreeElement[]> {
     if (!element) {
-      return this._features.map((f) => new FeatureTreeItem(f));
+      // Single worktree: flat list (backwards-compatible)
+      if (this._groups.length <= 1) {
+        const features = this._groups.flatMap((g) => g.features);
+        return features.map((f) => new FeatureTreeItem(f));
+      }
+      // Multiple worktrees: group-level headers
+      return this._groups.map((g) => new WorktreeGroupItem(g));
+    }
+    if (element instanceof WorktreeGroupItem) {
+      return element.group.features.map((f) => new FeatureTreeItem(f));
     }
     if (element instanceof FeatureTreeItem) {
       return element.feature.artifacts
@@ -33,19 +50,39 @@ export class FeatureTreeProvider implements vscode.TreeDataProvider<TreeElement>
   }
 
   async refresh(): Promise<void> {
-    try {
-      const discovered = await discoverFeatures(this._specsDir);
-      this._features = sortFeatures(discovered);
-    } catch {
-      this._features = [];
+    const workspaceRoot = path.dirname(this._specsDir.fsPath);
+
+    if (this._gitRoot) {
+      try {
+        const groups = await aggregateFeatures(this._gitRoot, workspaceRoot);
+        this._groups = groups.map((g) => ({ ...g, features: sortFeatures(g.features) }));
+      } catch {
+        this._groups = await this._singleWorktreeFallback(workspaceRoot);
+      }
+    } else {
+      this._groups = await this._singleWorktreeFallback(workspaceRoot);
     }
 
     await vscode.commands.executeCommand(
       'setContext',
       CONTEXT_KEYS.noFeatures,
-      this._features.length === 0,
+      this._groups.flatMap((g) => g.features).length === 0,
     );
     this._onDidChangeTreeData.fire(undefined);
+  }
+
+  private async _singleWorktreeFallback(workspaceRoot: string): Promise<FeatureGroup[]> {
+    try {
+      const currentWorktree: WorktreeInfo = {
+        path: workspaceRoot,
+        branch: undefined,
+        isCurrentWorkspace: true,
+      };
+      const discovered = await discoverFeatures(this._specsDir, currentWorktree);
+      return [{ worktree: currentWorktree, features: sortFeatures(discovered) }];
+    } catch {
+      return [];
+    }
   }
 
   dispose(): void {

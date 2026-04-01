@@ -5,6 +5,8 @@ import { Feature } from '../../../src/models/feature.js';
 import { WorkflowState } from '../../../src/models/workflowState.js';
 import { STATE_ICONS } from '../../../src/constants.js';
 
+const CURRENT_WORKTREE = { path: '/repo/main', branch: 'main', isCurrentWorkspace: true };
+
 function makeFeature(
   state: WorkflowState,
   needsAction: boolean,
@@ -18,6 +20,7 @@ function makeFeature(
     state,
     artifacts: [],
     actionState: { needsAction, pendingActionLabel },
+    worktreeSource: CURRENT_WORKTREE,
   };
 }
 
