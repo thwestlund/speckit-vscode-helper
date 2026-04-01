@@ -14,6 +14,17 @@ import { findGitRoot } from './services/worktreeAggregator.js';
 let outputChannel: vscode.OutputChannel | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+  try {
+    await _activate(context);
+  } catch (err) {
+    // Surface activation errors so they're visible instead of silently failing
+    void vscode.window.showErrorMessage(
+      `SpecKit failed to activate: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
+}
+
+async function _activate(context: vscode.ExtensionContext): Promise<void> {
   const startTime = performance.now();
 
   outputChannel = vscode.window.createOutputChannel('SpecKit');
