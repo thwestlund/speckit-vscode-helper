@@ -95,6 +95,16 @@
         "command": "speckit.openArtifact",
         "title": "Open Artifact",
         "category": "SpecKit"
+      },
+      {
+        "command": "speckit.openFeatureInChat",
+        "title": "Open in Chat",
+        "category": "SpecKit"
+      },
+      {
+        "command": "speckit.startInWorktree",
+        "title": "Start in Worktree",
+        "category": "SpecKit"
       }
     ],
     "menus": {
@@ -149,6 +159,16 @@
           "command": "speckit.openArtifact",
           "when": "viewItem =~ /^artifact\\./",
           "group": "inline"
+        },
+        {
+          "command": "speckit.openFeatureInChat",
+          "when": "viewItem =~ /^feature\\./",
+          "group": "speckit@0"
+        },
+        {
+          "command": "speckit.startInWorktree",
+          "when": "viewItem =~ /^feature\\./",
+          "group": "speckit@5"
         }
       ]
     },
