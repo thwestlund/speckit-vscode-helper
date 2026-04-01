@@ -16,7 +16,11 @@ const STATE_LABELS: Record<WorkflowState, string> = {
 
 export class FeatureTreeItem extends vscode.TreeItem {
   constructor(readonly feature: Feature) {
-    super(feature.shortName, vscode.TreeItemCollapsibleState.Collapsed);
+    const label =
+      feature.number !== feature.shortName
+        ? `${feature.number} ${feature.shortName}`
+        : feature.shortName;
+    super(label, vscode.TreeItemCollapsibleState.Collapsed);
     this.description = STATE_LABELS[feature.state];
     this.contextValue = `feature.${feature.state}`;
 

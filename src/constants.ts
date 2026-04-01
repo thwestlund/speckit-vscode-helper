@@ -43,6 +43,8 @@ export const COMMAND_IDS = {
   createChecklist: 'speckit.createChecklist',
   syncExtension: 'speckit.syncExtension',
   openArtifact: 'speckit.openArtifact',
+  openFeatureInChat: 'speckit.openFeatureInChat',
+  startInWorktree: 'speckit.startInWorktree',
 } as const;
 
 export const SETTING_KEYS = {
@@ -53,3 +55,16 @@ export const CONTEXT_KEYS = {
   active: 'speckit.active',
   noFeatures: 'speckit.noFeatures',
 } as const;
+
+export const CHAT_SKELETON = `## User Story 1
+As a user... [describe what you want and why]
+
+### Acceptance Criteria
+- [ ] [criterion]
+- [ ] [criterion]
+
+## User Story 2 *(optional)*
+As a user... [describe what you want and why]
+
+### Acceptance Criteria
+- [ ] [criterion]`;

@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
-import { COMMAND_IDS, CONTEXT_KEYS } from './constants.js';
+import * as path from 'path';
+import { COMMAND_IDS, CONTEXT_KEYS, CHAT_SKELETON } from './constants.js';
 import { FeatureTreeProvider } from './providers/featureTreeProvider.js';
 import { FeatureTreeItem, ArtifactTreeItem } from './providers/featureTreeItem.js';
 import { FileWatcher } from './services/fileWatcher.js';
@@ -7,6 +8,7 @@ import { launchPrompt } from './services/promptLauncher.js';
 import { registerAgent } from './agents/agentRegistry.js';
 import { CopilotAgent } from './agents/copilotAgent.js';
 import { ClaudeAgent } from './agents/claudeAgent.js';
+import { listWorktrees, addWorktree } from './services/worktreeService.js';
 
 let outputChannel: vscode.OutputChannel | undefined;
 
@@ -99,6 +101,27 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }),
   );
 
+  // US2 (002): Open feature in new chat with skeleton template
+  context.subscriptions.push(
+    vscode.commands.registerCommand(COMMAND_IDS.openFeatureInChat, () => {
+      void vscode.commands.executeCommand('workbench.action.chat.open', {
+        query: CHAT_SKELETON,
+        isPartialQuery: true,
+        newSession: true,
+      });
+    }),
+  );
+
+  // US3 (002): Start feature in a new or existing git worktree
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      COMMAND_IDS.startInWorktree,
+      (item?: FeatureTreeItem) => {
+        void startInWorktree(item, workspaceRoot);
+      },
+    ),
+  );
+
   const elapsed = performance.now() - startTime;
   if (elapsed > 500) {
     outputChannel.appendLine(
@@ -139,6 +162,67 @@ async function showSyncNotification(): Promise<void> {
   );
   if (action === 'Sync Now') {
     await vscode.commands.executeCommand(COMMAND_IDS.syncExtension);
+  }
+}
+
+async function startInWorktree(
+  item: FeatureTreeItem | undefined,
+  workspaceRoot: vscode.Uri,
+): Promise<void> {
+  const gitRoot = workspaceRoot.fsPath;
+  const choice = await vscode.window.showQuickPick(['New Worktree', 'Existing Worktree'], {
+    title: 'Start in Worktree',
+    placeHolder: 'Choose worktree type',
+  });
+  if (!choice) {
+    return;
+  }
+
+  try {
+    if (choice === 'New Worktree') {
+      const uris = await vscode.window.showOpenDialog({
+        canSelectFiles: false,
+        canSelectFolders: true,
+        canSelectMany: false,
+        title: 'Select parent folder for new worktree',
+        openLabel: 'Select Folder',
+      });
+      if (!uris || uris.length === 0) {
+        return;
+      }
+      const branchName = item?.feature.branchName ?? 'new-worktree';
+      const targetPath = path.join(uris[0].fsPath, branchName);
+      await addWorktree(branchName, targetPath, gitRoot);
+      await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(targetPath), {
+        forceNewWindow: true,
+      });
+    } else {
+      const worktrees = await listWorktrees(gitRoot);
+      const candidates = worktrees.filter((w) => !w.isCurrentWorkspace);
+      if (candidates.length === 0) {
+        await vscode.window.showInformationMessage('No other worktrees found.');
+        return;
+      }
+      const selected = await vscode.window.showQuickPick(
+        candidates.map((w) => ({
+          label: w.branch ?? path.basename(w.path),
+          description: w.path,
+          worktree: w,
+        })),
+        { title: 'Select existing worktree to open' },
+      );
+      if (!selected) {
+        return;
+      }
+      await vscode.commands.executeCommand(
+        'vscode.openFolder',
+        vscode.Uri.file(selected.worktree.path),
+        { forceNewWindow: true },
+      );
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    void vscode.window.showErrorMessage(`Worktree operation failed: ${message}`);
   }
 }
 
