@@ -30,15 +30,18 @@ export class FeatureTreeProvider implements vscode.TreeDataProvider<TreeElement>
 
   async getChildren(element?: TreeElement): Promise<TreeElement[]> {
     if (!element) {
-      // Single worktree: flat list (backwards-compatible)
-      if (this._groups.length <= 1) {
-        const features = this._groups.flatMap((g) => g.features);
-        return features.map((f) => new FeatureTreeItem(f));
-      }
-      // Multiple worktrees: group-level headers
+      // Always render as grouped — one WorktreeGroupItem per worktree
       return this._groups.map((g) => new WorktreeGroupItem(g));
     }
     if (element instanceof WorktreeGroupItem) {
+      if (element.group.features.length === 0) {
+        const placeholder = new vscode.TreeItem(
+          '(no features)',
+          vscode.TreeItemCollapsibleState.None,
+        );
+        placeholder.contextValue = 'noFeatures';
+        return [placeholder as unknown as TreeElement];
+      }
       return element.group.features.map((f) => new FeatureTreeItem(f));
     }
     if (element instanceof FeatureTreeItem) {

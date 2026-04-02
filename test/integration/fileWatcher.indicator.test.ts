@@ -2,6 +2,15 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import { FeatureTreeProvider } from '../../src/providers/featureTreeProvider.js';
 import { FeatureTreeItem } from '../../src/providers/featureTreeItem.js';
+import { WorktreeGroupItem } from '../../src/providers/worktreeGroupItem.js';
+
+async function getFeatureItems(provider: FeatureTreeProvider): Promise<FeatureTreeItem[]> {
+  const groups = (await provider.getChildren()) as WorktreeGroupItem[];
+  const nested = await Promise.all(
+    groups.map((g) => provider.getChildren(g) as Promise<FeatureTreeItem[]>),
+  );
+  return nested.flat().filter((item) => item instanceof FeatureTreeItem);
+}
 
 suite('FileWatcher Indicator (FR-003)', () => {
   let specsUri: vscode.Uri;
@@ -28,7 +37,7 @@ suite('FileWatcher Indicator (FR-003)', () => {
     await provider.refresh();
 
     // Verify initial state: 004-specified is Specified with "Create a plan" label
-    let children = (await provider.getChildren()) as FeatureTreeItem[];
+    let children = await getFeatureItems(provider);
     let item004 = children.find((c) => c.feature.branchName === '004-specified');
     assert.ok(item004, '004-specified must be in the tree');
     assert.strictEqual(item004.feature.actionState.needsAction, true);
@@ -45,7 +54,7 @@ suite('FileWatcher Indicator (FR-003)', () => {
     // Refresh the provider (simulating what FileWatcher does on file change)
     await provider.refresh();
 
-    children = (await provider.getChildren()) as FeatureTreeItem[];
+    children = await getFeatureItems(provider);
     item004 = children.find((c) => c.feature.branchName === '004-specified');
     assert.ok(item004, '004-specified must still be in the tree after plan.md added');
 

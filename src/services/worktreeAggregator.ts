@@ -2,7 +2,6 @@ import * as childProcess from 'child_process';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { FeatureGroup } from '../models/featureGroup.js';
-import { STATE_ORDER, WorkflowState } from '../models/workflowState.js';
 import { discoverFeatures } from './specDiscovery.js';
 import { ExecFn, listWorktrees, WorktreeInfo } from './worktreeService.js';
 
@@ -64,61 +63,82 @@ export async function aggregateFeatures(
 
   const groupResults = await Promise.all(
     worktrees.map(async (worktree) => {
+      const specsUri = vscode.Uri.file(path.join(worktree.path, 'specs'));
       try {
-        const specsUri = vscode.Uri.file(path.join(worktree.path, 'specs'));
         const features = await discoverFeatures(specsUri, worktree);
-        return { worktree, features };
+        return { worktree, features, accessible: true };
       } catch {
-        return { worktree, features: [] };
+        return { worktree, features: [], accessible: false };
       }
     }),
   );
 
-  const nonEmpty = groupResults.filter((g) => g.features.length > 0);
-  return deduplicateByNumber(nonEmpty);
+  // Retain groups whose specs/ directory was accessible (even if dedup empties them);
+  // omit groups whose directory was not accessible on disk.
+  const accessible = groupResults.filter((g) => g.accessible);
+  const deduped = deduplicateFeatures(accessible);
+  return sortGroups(deduped);
 }
 
-export function deduplicateByNumber(groups: FeatureGroup[]): FeatureGroup[] {
-  // Build a map: numeric prefix → winning Feature (highest state, current workspace wins ties)
-  const winner = new Map<string, { groupIndex: number; featureIndex: number; stateRank: number }>();
+/**
+ * Assigns each feature to exactly one home worktree using a three-tier priority chain:
+ * 1. Suffix-match (strongest): the worktree whose branch ends with `-{featureFolderName}`
+ *    or equals `{featureFolderName}` (convention: `{project}-{number}-{name}`).
+ * 2. Current workspace: wins over list-order when no suffix match exists.
+ * 3. List order (weakest): first occurrence in the input array.
+ */
+export function deduplicateFeatures(groups: FeatureGroup[]): FeatureGroup[] {
+  // owner: featureFolderName → winning group index
+  const owner = new Map<string, number>();
 
-  groups.forEach((group, gi) => {
-    group.features.forEach((feature, fi) => {
-      const stateRank = stateToRank(feature.state);
-      const existing = winner.get(feature.number);
-      if (!existing) {
-        winner.set(feature.number, { groupIndex: gi, featureIndex: fi, stateRank });
-      } else if (
-        stateRank > existing.stateRank ||
-        (stateRank === existing.stateRank && group.worktree.isCurrentWorkspace)
-      ) {
-        winner.set(feature.number, { groupIndex: gi, featureIndex: fi, stateRank });
+  // Pass 1 — list order (weakest): first occurrence wins
+  for (let i = 0; i < groups.length; i++) {
+    for (const f of groups[i].features) {
+      if (!owner.has(f.branchName)) {
+        owner.set(f.branchName, i);
       }
-    });
-  });
-
-  // Rebuild groups keeping only winner features
-  const winnerNumbers = new Set(
-    [...winner.entries()].map(([num, { groupIndex, featureIndex }]) => {
-      const key = `${groupIndex}:${featureIndex}`;
-      return key;
-    }),
-  );
-  // Build set of (groupIndex, featureIndex) pairs that are winners
-  const winnerKeys = new Set<string>();
-  for (const { groupIndex, featureIndex } of winner.values()) {
-    winnerKeys.add(`${groupIndex}:${featureIndex}`);
+    }
   }
 
-  const deduped: FeatureGroup[] = groups
-    .map((group, gi) => ({
-      worktree: group.worktree,
-      features: group.features.filter((_, fi) => winnerKeys.has(`${gi}:${fi}`)),
-    }))
-    .filter((g) => g.features.length > 0);
+  // Pass 2 — current workspace overrides non-suffix-matched list-order winners
+  const currentIdx = groups.findIndex((g) => g.worktree.isCurrentWorkspace);
+  if (currentIdx >= 0) {
+    for (const f of groups[currentIdx].features) {
+      const winnerIdx = owner.get(f.branchName);
+      if (winnerIdx === undefined || winnerIdx === currentIdx) {
+        continue;
+      }
+      const winnerBranch = groups[winnerIdx].worktree.branch;
+      const winnerHasSuffix =
+        winnerBranch === f.branchName || (winnerBranch?.endsWith('-' + f.branchName) ?? false);
+      if (!winnerHasSuffix) {
+        owner.set(f.branchName, currentIdx);
+      }
+    }
+  }
 
+  // Pass 3 — suffix-match (strongest): always overrides any prior assignment
+  for (let i = 0; i < groups.length; i++) {
+    const branch = groups[i].worktree.branch;
+    if (!branch) {
+      continue;
+    }
+    for (const f of groups[i].features) {
+      if (branch === f.branchName || branch.endsWith('-' + f.branchName)) {
+        owner.set(f.branchName, i);
+      }
+    }
+  }
+
+  return groups.map((g, i) => ({
+    ...g,
+    features: g.features.filter((f) => owner.get(f.branchName) === i),
+  }));
+}
+
+export function sortGroups(groups: FeatureGroup[]): FeatureGroup[] {
   // Sort: current workspace first, then alphabetical by branch
-  return deduped.sort((a, b) => {
+  return [...groups].sort((a, b) => {
     if (a.worktree.isCurrentWorkspace) {
       return -1;
     }
@@ -129,9 +149,4 @@ export function deduplicateByNumber(groups: FeatureGroup[]): FeatureGroup[] {
       b.worktree.branch ?? b.worktree.path,
     );
   });
-}
-
-function stateToRank(state: WorkflowState): number {
-  const idx = STATE_ORDER.indexOf(state);
-  return idx === -1 ? -1 : idx;
 }

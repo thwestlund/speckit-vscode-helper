@@ -2,6 +2,101 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import { FeatureTreeProvider } from '../../src/providers/featureTreeProvider.js';
 import { FeatureTreeItem } from '../../src/providers/featureTreeItem.js';
+import { WorktreeGroupItem } from '../../src/providers/worktreeGroupItem.js';
+
+// Helper: navigate through the new grouped tree structure.
+// getChildren(undefined) → WorktreeGroupItem[]; getChildren(group) → FeatureTreeItem[]
+async function getFlatFeatureItems(provider: FeatureTreeProvider): Promise<FeatureTreeItem[]> {
+  const groups = (await provider.getChildren()) as WorktreeGroupItem[];
+  const nested = await Promise.all(
+    groups.map((g) => provider.getChildren(g) as Promise<FeatureTreeItem[]>),
+  );
+  return nested.flat();
+}
+
+suite('FeatureTreeProvider — grouped structure (US1, T015)', () => {
+  let specsUri: vscode.Uri;
+
+  suiteSetup(() => {
+    const workspaceUri = vscode.workspace.workspaceFolders![0].uri;
+    specsUri = vscode.Uri.joinPath(workspaceUri, 'specs');
+  });
+
+  test('getChildren(undefined) always returns WorktreeGroupItem[] even for single worktree', async () => {
+    const provider = new FeatureTreeProvider(specsUri);
+    await provider.refresh();
+
+    const topLevel = await provider.getChildren();
+    assert.ok(topLevel.length > 0, 'must have at least one group');
+    for (const item of topLevel) {
+      assert.ok(
+        item instanceof WorktreeGroupItem,
+        `Expected WorktreeGroupItem, got ${item.constructor.name}`,
+      );
+    }
+    provider.dispose();
+  });
+
+  test('single-worktree group label is the current branch name or a fallback', async () => {
+    const provider = new FeatureTreeProvider(specsUri);
+    await provider.refresh();
+
+    const topLevel = (await provider.getChildren()) as WorktreeGroupItem[];
+    // There must be exactly one group in the single-worktree test workspace
+    assert.strictEqual(topLevel.length, 1, 'single-worktree setup produces one group');
+
+    const group = topLevel[0];
+    assert.ok(
+      typeof group.label === 'string' && group.label.length > 0,
+      'group label must be a non-empty string',
+    );
+    provider.dispose();
+  });
+
+  test('features are children of their WorktreeGroupItem, not top-level', async () => {
+    const provider = new FeatureTreeProvider(specsUri);
+    await provider.refresh();
+
+    const topLevel = await provider.getChildren();
+    // No top-level item should be a FeatureTreeItem
+    for (const item of topLevel) {
+      assert.ok(
+        !(item instanceof FeatureTreeItem),
+        'FeatureTreeItem must not appear at the top level',
+      );
+    }
+
+    // Features must be accessible via the group children
+    const features = await getFlatFeatureItems(provider);
+    assert.ok(features.length > 0, 'must have features nested under group items');
+
+    provider.dispose();
+  });
+
+  test('each feature branchName appears in at most one group (T006, T012)', async () => {
+    const provider = new FeatureTreeProvider(specsUri);
+    await provider.refresh();
+
+    const groups = (await provider.getChildren()) as WorktreeGroupItem[];
+    const allBranchNames: string[] = [];
+    for (const g of groups) {
+      const children = (await provider.getChildren(g)) as FeatureTreeItem[];
+      for (const c of children) {
+        if (c instanceof FeatureTreeItem) {
+          allBranchNames.push(c.feature.branchName);
+        }
+      }
+    }
+    const unique = new Set(allBranchNames);
+    assert.strictEqual(
+      allBranchNames.length,
+      unique.size,
+      `Duplicate branchNames found: ${allBranchNames.join(', ')}`,
+    );
+
+    provider.dispose();
+  });
+});
 
 suite('FeatureTreeProvider sort order (US2)', () => {
   let specsUri: vscode.Uri;
@@ -15,7 +110,7 @@ suite('FeatureTreeProvider sort order (US2)', () => {
     const provider = new FeatureTreeProvider(specsUri);
     await provider.refresh();
 
-    const children = (await provider.getChildren()) as FeatureTreeItem[];
+    const children = await getFlatFeatureItems(provider);
     assert.ok(children.length > 0, 'Tree must contain features');
 
     // Split into two groups
@@ -48,7 +143,7 @@ suite('FeatureTreeProvider sort order (US2)', () => {
     const provider = new FeatureTreeProvider(specsUri);
     await provider.refresh();
 
-    const children = (await provider.getChildren()) as FeatureTreeItem[];
+    const children = await getFlatFeatureItems(provider);
 
     // Check ordering within the needsAction group
     const needsActionItems = children.filter((c) => c.feature.actionState.needsAction);
