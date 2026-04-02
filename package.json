@@ -193,6 +193,7 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run build:prod",
+    "publish": "vsce publish --no-dependencies",
     "compile": "tsc --noEmit",
     "build": "node esbuild.config.mjs",
     "build:prod": "node esbuild.config.mjs --production",
